@@ -5,6 +5,10 @@ ENV/
 .venv/
 .env
 
+# Configuration files (contains API keys)
+config.py
+.env.local
+
 # Python
 __pycache__/
 *.py[cod]
@@ -118,3 +122,14 @@ logs/
 *.pkl
 *.joblib
 *.model
+
+# Folders
+archive/
+archieve/
+
+# Training outputs
+trained_model/
+results/
+
+# Log files
+order_processing.log
