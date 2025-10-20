@@ -202,14 +202,68 @@ python rag_vector_index.py
 This will build the index (if needed) and demo restaurant-first searches.
 
 ### Step 3: RAG Search Capabilities
+
+**Restaurant-name-first search:**
 ```python
-# Restaurant-name-first search
+from rag_vector_index import MenuRAGIndex
+
+# Initialize RAG system
+rag_index = MenuRAGIndex()
+rag_index.load_index()  # or build_index() if not exists
+
+# Restaurant-specific search (preferred approach)
 context = rag_index.get_menu_context_for_order(
     "I want chicken tikka with naan",
     restaurant_name="Little India",  # Searches here first
     cuisine="indian",                # Falls back to this
     max_items=3
 )
+print(context)
+# Output:
+# MENU ITEMS from Little India:
+# - Chicken Tikka Masala (Indian) at Little India: Grilled chicken in spiced curry sauce [$.19.81] (score: 0.856)
+# - Garlic Naan (Indian) at Little India: Soft flatbread with garlic and herbs [$4.88] (score: 0.743)
+```
+
+**Cuisine-based search (fallback):**
+```python
+# When restaurant not found, searches by cuisine across multiple restaurants
+context = rag_index.get_menu_context_for_order(
+    "spicy chicken with rice",
+    restaurant_name="Unknown Restaurant",  # Not found
+    cuisine="indian",                      # Falls back to this
+    max_items=3
+)
+print(context)
+# Output:
+# MENU ITEMS (INDIAN cuisine):
+# - Chicken Vindaloo (Indian) at Little India: Spicy Goan curry with chicken [$17.99] (score: 0.892)
+# - Chicken Tikka Masala (Indian) at Little India: Grilled chicken in spiced curry sauce [$19.81] (score: 0.834)
+# - Lamb Biryani (Indian) at Little India: Aromatic basmati rice layered with spiced lamb [$21.50] (score: 0.756)
+```
+
+**Direct restaurant search:**
+```python
+# Search within specific restaurant only
+results = rag_index.search_by_restaurant_name("Little India", "chicken", top_k=3)
+for item, score in results:
+    print(f"{item['name']}: {item['description']} (${item['price']:.2f}) - Score: {score:.3f}")
+# Output:
+# Chicken Tikka Masala: Grilled chicken in spiced curry sauce ($19.81) - Score: 0.856
+# Butter Chicken: Tender chicken in creamy tomato sauce ($19.96) - Score: 0.823
+# Tandoori Wings: Chicken wings marinated in tandoori spices ($10.61) - Score: 0.789
+```
+
+**Cuisine search across restaurants:**
+```python
+# Search by cuisine across multiple restaurants (max 3 restaurants)
+results = rag_index.search_by_cuisine("indian", "vegetarian curry", top_k=3)
+for item, score in results:
+    print(f"{item['name']} at {item['restaurant_name']}: ${item['price']:.2f} - Score: {score:.3f}")
+# Output:
+# Palak Paneer at Little India: $16.48 - Score: 0.878
+# Dal Makhani at Little India: $15.08 - Score: 0.845
+# Paneer Tikka at Spice Garden: $14.99 - Score: 0.812
 ```
 
 ## Training Process
@@ -226,6 +280,95 @@ The system includes robust post-processing to handle common model output issues:
 - **JSON Formatting**: Adds missing curly braces to incomplete JSON
 - **Malformed Patterns**: Fixes issues like `"field": "value": "another_value"`
 - **Error Handling**: Gracefully handles parsing failures
+
+## TESTING and USAGE
+
+### Quick Test Suite
+
+**1. Test Menu Database:**
+```bash
+python rag_menu_data.py
+```
+Expected output: List of restaurants, cuisines, and demo searches
+
+**2. Test RAG Vector Index:**
+```bash
+python rag_vector_index.py  
+```
+Expected output: Index building progress, restaurant-specific searches, cuisine fallback demos
+
+**3. Test Training Data Loading:**
+```bash
+python -c "from train_tokenizer import main; main()" # Will stop at breakpoint for inspection
+```
+
+### Production Workflow
+
+**Step 1: Build RAG Index (one-time setup)**
+```python
+from rag_vector_index import MenuRAGIndex
+
+rag_index = MenuRAGIndex()
+rag_index.build_index()  # Takes ~2-3 minutes, saves to data/menu_rag_index_v3.pkl
+```
+
+**Step 2: Train Model (if needed)**
+```bash
+python train_tokenizer.py  # Takes ~10-15 minutes on MPS
+```
+
+**Step 3: Process Orders with RAG Context**
+```python
+from process_order import initialize_model, process_order_with_rag
+from rag_vector_index import MenuRAGIndex
+
+# Initialize systems
+model, tokenizer, device = initialize_model('./trained_model')
+rag_index = MenuRAGIndex()
+rag_index.load_index()
+
+# Process order with restaurant-first RAG context
+result = process_order_with_rag(
+    model, tokenizer, device, rag_index,
+    "Hi, I'm John. I want chicken tikka and naan from Little India",
+    restaurant_name="Little India",
+    cuisine="indian"
+)
+```
+
+### Example Outputs
+
+**Restaurant-specific order:**
+```json
+{
+  "proceed_score": 1,
+  "customer_name": "John", 
+  "order_type": null,
+  "total_number_of_different_items": 2,
+  "order_items_name": ["Chicken Tikka Masala", "Garlic Naan"],
+  "order_items_quantity": [1, 1],
+  "order_items_modifications_plus": [[], []],
+  "order_items_modifications_minus": [[], []],
+  "order_notes": [null, null],
+  "global_note": null
+}
+```
+
+**Invalid order (proceed_score = 0):**
+```json
+{
+  "proceed_score": 0,
+  "customer_name": null,
+  "order_type": null, 
+  "total_number_of_different_items": null,
+  "order_items_name": null,
+  "order_items_quantity": null,
+  "order_items_modifications_plus": null,
+  "order_items_modifications_minus": null,
+  "order_notes": null,
+  "global_note": null
+}
+```
 
 ## Usage
 
