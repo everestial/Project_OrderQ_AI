@@ -2,13 +2,19 @@
 
 ## Project Overview
 
-OrderQ AI is a natural language processing system that converts natural language restaurant orders into structured JSON format. The system uses a fine-tuned T5 model to extract structured information from customer orders.
+OrderQ AI is a comprehensive natural language processing system that converts natural language restaurant orders into structured JSON format. The system combines:
+- **Fine-tuned T5 model** for order extraction and legitimacy scoring
+- **RAG (Retrieval-Augmented Generation)** for menu-aware order processing
+- **Restaurant-name-first search** with cuisine fallback for multi-restaurant support
 
 ## Key Features
 
 - **Natural Language Processing**: Converts free-form order text into structured data
+- **Multi-task Learning**: Order extraction + legitimacy scoring (proceed_score)
+- **RAG-Enhanced Processing**: Menu-aware order processing with context
+- **Restaurant-First Search**: Prioritizes specific restaurant menus, falls back to cuisine
 - **Customer Information Extraction**: Identifies customer names and order types
-- **Item Parsing**: Extracts item names, quantities, and modifications
+- **Advanced Item Parsing**: Extracts item names, quantities, modifications (plus/minus)
 - **JSON Output**: Produces well-formatted JSON for downstream processing
 - **Robust Post-Processing**: Handles and fixes common model output issues
 
@@ -26,13 +32,16 @@ The system extracts the following information from orders:
 
 ```json
 {
+  "proceed_score": 1,
   "customer_name": "John Smith",
   "order_type": "delivery",
   "total_number_of_different_items": 2,
-  "order_items_name": "pizza|diet cokes",
-  "order_items_quantity": "2|3",
-  "order_items_modifications": "large|extra cheese|",
-  "order_notes": null
+  "order_items_name": ["pizza", "diet cokes"],
+  "order_items_quantity": [2, 3],
+  "order_items_modifications_plus": [["large", "extra cheese"], []],
+  "order_items_modifications_minus": [[], []],
+  "order_notes": ["crispy crust", null],
+  "global_note": "Please deliver to front door"
 }
 ```
 
@@ -141,11 +150,61 @@ python demo_complete.py
    Quantities: 2, 3
 ```
 
+## RAG Index Setup
+
+### Step 1: Prepare Menu Database
+Ensure you have a properly formatted JSON file:
+```json
+[
+  {
+    "restro_id": "REST_20180",
+    "restro_name": "Little India", 
+    "restro_cuisine": "INDIAN",
+    "menu": [
+      {
+        "item_id": "ITM_10623",
+        "name": "Chicken Tikka Masala",
+        "aliases": ["tikka", "chicken tikka"],
+        "description": "Grilled chicken in spiced curry sauce",
+        "price": 19.81,
+        "category": "main_courses",
+        "dietary_tags": ["spicy"],
+        "ingredients": ["chicken", "tomato", "spices"]
+      }
+    ]
+  }
+]
+```
+
+### Step 2: Build RAG Vector Index
+```python
+from rag_vector_index import MenuRAGIndex
+
+# Initialize RAG system
+rag_index = MenuRAGIndex()
+
+# Build index from menu database
+rag_index.build_index()  # Reads from data/menu_database_v3.json
+
+# Index is automatically saved to data/menu_rag_index_v3.pkl
+```
+
+### Step 3: RAG Search Capabilities
+```python
+# Restaurant-name-first search
+context = rag_index.get_menu_context_for_order(
+    "I want chicken tikka with naan",
+    restaurant_name="Little India",  # Searches here first
+    cuisine="indian",                # Falls back to this
+    max_items=3
+)
+```
+
 ## Training Process
 
 1. **Data Loading**: Loads TSV data with proper handling of NaN values and pandas data types
-2. **Tokenization**: Prepares input/output pairs for T5 model
-3. **Training**: Fine-tunes T5-base for 3 epochs with proper hyperparameters
+2. **Tokenization**: Prepares input/output pairs for T5 model (no RAG context during training)
+3. **Training**: Fine-tunes T5-base for order extraction + legitimacy scoring
 4. **Model Saving**: Saves the trained model and tokenizer
 
 ## Post-Processing
