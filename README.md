@@ -153,7 +153,7 @@ python demo_complete.py
 ## RAG Index Setup
 
 ### Step 1: Prepare Menu Database
-Ensure you have a properly formatted JSON file:
+Ensure you have a properly formatted JSON file (`data/menu_database_v3.json`):
 ```json
 [
   {
@@ -176,6 +176,12 @@ Ensure you have a properly formatted JSON file:
 ]
 ```
 
+**Test the menu database structure:**
+```bash
+python rag_menu_data.py
+```
+This will show available restaurants, cuisines, and demo restaurant-specific searches.
+
 ### Step 2: Build RAG Vector Index
 ```python
 from rag_vector_index import MenuRAGIndex
@@ -188,6 +194,12 @@ rag_index.build_index()  # Reads from data/menu_database_v3.json
 
 # Index is automatically saved to data/menu_rag_index_v3.pkl
 ```
+
+**Test the RAG vector index:**
+```bash
+python rag_vector_index.py
+```
+This will build the index (if needed) and demo restaurant-first searches.
 
 ### Step 3: RAG Search Capabilities
 ```python
