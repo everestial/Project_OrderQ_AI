@@ -266,6 +266,42 @@ for item, score in results:
 # Paneer Tikka at Spice Garden: $14.99 - Score: 0.812
 ```
 
+### RAG Data Flow Architecture
+
+🔄 **The Complete Data Flow:**
+```
+menu_database_v3.json 
+    ↓
+rag_menu_data.py (loads & organizes data)
+    ↓  
+rag_vector_index.py (creates embeddings)
+    ↓
+RAG Index (saved as .pkl file)
+    ↓
+Inference (provides context to trained model)
+```
+
+🎯 **Key Point:**
+`rag_menu_data.py` is the **data layer** that:
+- Loads the JSON menu database
+- Organizes it for efficient RAG operations  
+- Provides restaurant-first search capabilities
+- Enables the RAG system to work with the v3 database structure
+
+**It's essential for RAG functionality but completely separate from LLM training!**
+
+### Training vs Inference Separation
+
+**During Training:** 
+- ✅ Uses TSV training data only
+- ❌ No RAG context included
+- 🎯 Model learns extraction patterns, not specific menu items
+
+**During Inference:**
+- ✅ Uses trained model + RAG context
+- ✅ RAG provides menu-aware context from restaurant database
+- 🎯 Best of both worlds: learned patterns + current menu data
+
 ## Training Process
 
 1. **Data Loading**: Loads TSV data with proper handling of NaN values and pandas data types
