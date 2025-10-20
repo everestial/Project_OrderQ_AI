@@ -3,6 +3,39 @@
 RAG Menu Database v3.0
 Updated menu data loader for the new v3 database structure
 Supports restaurant-name-first search with cuisine fallback
+
+FUTURE CHATBOT/AGENTIC AI IMPLEMENTATION:
+
+This module would be ESSENTIAL for chatbot functionality:
+
+1. MENU QUERIES & RECOMMENDATIONS:
+   - Customer: "What chicken dishes do you have?"
+   - Uses search_items_by_restaurant("Little India", "chicken")
+   - Chatbot responds with available dishes, prices, descriptions
+
+2. MENU VALIDATION:
+   - Customer: "I want chicken tikka"
+   - Validates item exists in restaurant's menu
+   - Enables order validation and clarification
+
+3. DYNAMIC MENU UPDATES:
+   - Update menu database without retraining model
+   - Chatbot immediately knows new items, prices, availability
+
+CHATBOT ARCHITECTURE PHASES:
+- Phase 1: Enhanced Order Processing (OrderQ AI + RAG validation)
+- Phase 2: Conversational Interface (intent classification, dialogue management)
+- Phase 3: Agentic Capabilities (multi-turn conversations, recommendations)
+- Phase 4: Advanced AI Agent (context-aware upselling, personalization)
+
+TECHNOLOGIES FOR EXTENSION:
+- Rasa/Dialogflow: Conversation management
+- LangChain: LLM orchestration and memory
+- FastAPI: Real-time API endpoints
+- WebSocket: Real-time chat interface
+- Redis: Session and state management
+
+The current RAG system provides the FOUNDATION for menu-aware conversations!
 """
 
 import json
