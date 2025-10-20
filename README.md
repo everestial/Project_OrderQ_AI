@@ -290,6 +290,13 @@ Inference (provides context to trained model)
 
 **It's essential for RAG functionality but completely separate from LLM training!**
 
+❌ **Where it is NOT used:**
+
+1. **LLM Training** (`train_tokenizer.py`):
+   • Training uses only the TSV data file
+   • No menu database involved during training  
+   • Model learns extraction patterns, not specific menu items
+
 ### Training vs Inference Separation
 
 **During Training:** 
